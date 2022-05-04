@@ -214,8 +214,13 @@ if args.plot:
     vis = visdom.Visdom(env=args.plot_env)
 
 def run(num_epochs):
+<<<<<<< HEAD
     import debugpy
     # 5678 is the default attach port in the VS Code debug configurations. Unless a host and port are specified, host defaults to 127.0.0.1
+=======
+    # import debugpy
+    # # 5678 is the default attach port in the VS Code debug configurations. Unless a host and port are specified, host defaults to 127.0.0.1
+>>>>>>> c3ea4b79edf36f4b48eed645c054c84c1f0f5fb7
     # debugpy.listen(5678)
     # print("Waiting for debugger attach")
     # debugpy.wait_for_client()
