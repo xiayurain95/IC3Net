@@ -59,8 +59,7 @@ parser.add_argument('--nactions', default='1', type=str,
                     help='the number of agent actions (0 for continuous). Use N:M:K for multiple actions')
 parser.add_argument('--action_scale', default=1.0, type=float,
                     help='scale action output from model')
-parser.add_argument('--dim', default=5, type=int,
-                    help='length of road')
+parser.add_argument('--dim', default=14, type=int, help='length of road')
 parser.add_argument('--vision', default=0, type=int,
                     help='vision')
 parser.add_argument('--add_rate_min', default=0.1, type=float)
@@ -68,7 +67,7 @@ parser.add_argument('--add_rate_max', default=0.3, type=float)
 parser.add_argument('--curr_start', default=250, type=int)
 parser.add_argument('--curr_end', default=1250, type=int)
 parser.add_argument('--difficulty', default='easy', type=str)
-parser.add_argument('--vocab_type', default=True, type=bool, help="Not sure what is it")
+parser.add_argument('--vocab_type', default='bool', type=str, help="Not sure what is it")
 
 # other
 parser.add_argument('--plot', action='store_true', default=False,
@@ -217,11 +216,11 @@ if args.plot:
 def run(num_epochs):
     import debugpy
     # 5678 is the default attach port in the VS Code debug configurations. Unless a host and port are specified, host defaults to 127.0.0.1
-    debugpy.listen(5678)
-    print("Waiting for debugger attach")
-    debugpy.wait_for_client()
-    debugpy.breakpoint()
-    print('break on this line')
+    # debugpy.listen(5678)
+    # print("Waiting for debugger attach")
+    # debugpy.wait_for_client()
+    # debugpy.breakpoint()
+    # print('break on this line')
     for ep in range(num_epochs):
         epoch_begin_time = time.time()
         stat = dict()
