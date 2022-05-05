@@ -5,14 +5,18 @@ import argparse
 
 import numpy as np
 import torch
-import visdom
+# import visdom
 import data
 from models import *
 from comm import CommNetMLP
 from utils import *
 from action_utils import parse_action_args
-from trainer import Trainer
+# from trainer import Trainer
+from DQNTrainer import DQNTrainer as Trainer
 from multi_processing import MultiProcessTrainer
+from torch.utils.tensorboard import SummaryWriter
+
+writer = SummaryWriter()
 
 torch.utils.backcompat.broadcast_warning.enabled = True
 torch.utils.backcompat.keepdim_warning.enabled = True
@@ -183,10 +187,6 @@ else:
 if not args.display:
     display_models([policy_net])
 
-# share parameters among threads, but not gradients
-for p in policy_net.parameters():
-    p.data.share_memory_()
-
 if args.nprocesses > 1:
     trainer = MultiProcessTrainer(args, lambda: Trainer(args, policy_net, data.init(args.env_name, args)))
 else:
@@ -210,74 +210,61 @@ log['value_loss'] = LogField(list(), True, 'epoch', 'num_steps')
 log['action_loss'] = LogField(list(), True, 'epoch', 'num_steps')
 log['entropy'] = LogField(list(), True, 'epoch', 'num_steps')
 
-if args.plot:
-    vis = visdom.Visdom(env=args.plot_env)
+# if args.plot:
+#     vis = visdom.Visdom(env=args.plot_env)
 
 def run(num_epochs):
-<<<<<<< HEAD
-    import debugpy
-    # 5678 is the default attach port in the VS Code debug configurations. Unless a host and port are specified, host defaults to 127.0.0.1
-=======
     # import debugpy
     # # 5678 is the default attach port in the VS Code debug configurations. Unless a host and port are specified, host defaults to 127.0.0.1
->>>>>>> c3ea4b79edf36f4b48eed645c054c84c1f0f5fb7
     # debugpy.listen(5678)
     # print("Waiting for debugger attach")
     # debugpy.wait_for_client()
     # debugpy.breakpoint()
     # print('break on this line')
+    return_list = []
     for ep in range(num_epochs):
         epoch_begin_time = time.time()
         stat = dict()
-        for n in range(args.epoch_size):
-            if n == args.epoch_size - 1 and args.display:
-                trainer.display = True
-            s = trainer.train_batch(ep)
-            merge_stat(s, stat)
-            trainer.display = False
-
+        episode_reward = []
+        for episode in range(100):
+            trainer.display = True
+            reward = trainer.get_episode(episode)
+            episode_reward.append(reward)
         epoch_time = time.time() - epoch_begin_time
-        epoch = len(log['epoch'].data) + 1
-        for k, v in log.items():
-            if k == 'epoch':
-                v.data.append(epoch)
-            else:
-                if k in stat and v.divide_by is not None and stat[v.divide_by] > 0:
-                    stat[k] = stat[k] / stat[v.divide_by]
-                v.data.append(stat.get(k, 0))
-
-        np.set_printoptions(precision=2)
-
-        print('Epoch {}\tReward {}\tTime {:.2f}s'.format(
-                epoch, stat['reward'], epoch_time
+        episode_reward = np.mean(np.array(episode_reward))
+        return_list.append(episode_reward)
+        
+        print('Epoch {}\tReward {:.5f}\tTime {:.2f}s'.format(
+                ep, episode_reward, epoch_time
         ))
 
-        if 'enemy_reward' in stat.keys():
-            print('Enemy-Reward: {}'.format(stat['enemy_reward']))
-        if 'add_rate' in stat.keys():
-            print('Add-Rate: {:.2f}'.format(stat['add_rate']))
-        if 'success' in stat.keys():
-            print('Success: {:.2f}'.format(stat['success']))
-        if 'steps_taken' in stat.keys():
-            print('Steps-taken: {:.2f}'.format(stat['steps_taken']))
-        if 'comm_action' in stat.keys():
-            print('Comm-Action: {}'.format(stat['comm_action']))
-        if 'enemy_comm' in stat.keys():
-            print('Enemy-Comm: {}'.format(stat['enemy_comm']))
+        writer.add_scalar('average_episode_reward', episode_reward, ep)
+        # if 'enemy_reward' in stat.keys():
+        #     print('Enemy-Reward: {}'.format(stat['enemy_reward']))
+        # if 'add_rate' in stat.keys():
+        #     print('Add-Rate: {:.2f}'.format(stat['add_rate']))
+        # if 'success' in stat.keys():
+        #     print('Success: {:.2f}'.format(stat['success']))
+        # if 'steps_taken' in stat.keys():
+        #     print('Steps-taken: {:.2f}'.format(stat['steps_taken']))
+        # if 'comm_action' in stat.keys():
+        #     print('Comm-Action: {}'.format(stat['comm_action']))
+        # if 'enemy_comm' in stat.keys():
+        #     print('Enemy-Comm: {}'.format(stat['enemy_comm']))
 
-        if args.plot:
-            for k, v in log.items():
-                if v.plot and len(v.data) > 0:
-                    vis.line(np.asarray(v.data), np.asarray(log[v.x_axis].data[-len(v.data):]),
-                    win=k, opts=dict(xlabel=v.x_axis, ylabel=k))
+        # if args.plot:
+        #     for k, v in log.items():
+        #         if v.plot and len(v.data) > 0:
+        #             vis.line(np.asarray(v.data), np.asarray(log[v.x_axis].data[-len(v.data):]),
+        #             win=k, opts=dict(xlabel=v.x_axis, ylabel=k))
 
-        if args.save_every and ep and args.save != '' and ep % args.save_every == 0:
-            # fname, ext = args.save.split('.')
-            # save(fname + '_' + str(ep) + '.' + ext)
-            save(args.save + '_' + str(ep))
+        # if args.save_every and ep and args.save != '' and ep % args.save_every == 0:
+        #     # fname, ext = args.save.split('.')
+        #     # save(fname + '_' + str(ep) + '.' + ext)
+        #     save(args.save + '_' + str(ep))
 
-        if args.save != '':
-            save(args.save)
+        # if args.save != '':
+        #     save(args.save)
 
 def save(path):
     d = dict()

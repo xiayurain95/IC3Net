@@ -457,11 +457,9 @@ class TrafficJunctionEnv(gym.Env):
                 return False
         return True
 
-
-# if act is 0 , the vertical car is allow to get a pass
-# if act is 1 , the horizontal car is allow to get a pass
-# if act is 2 , all car is NOT allow to get a pass
-
+    # if act is 0 , the vertical car is allow to get a pass
+    # if act is 1 , the horizontal car is allow to get a pass
+    # if act is 2 , all car is NOT allow to get a pass
     def _take_action(self, idx, act: int):
         # non-active car
         if self.alive_mask[idx] == 0:
@@ -479,7 +477,9 @@ class TrafficJunctionEnv(gym.Env):
         # check has_car matrix
         loc = self.car_route_loc[idx]  # location of curr car
         if loc < len(self.chosen_path[idx]) - 1:  # should we check next car
-            if self.has_car[self.route_id[idx]][loc + 1] == 1:
+            # if self.has_car[self.route_id[idx]][loc + 1] == 1
+            # TODO 去掉了loc + 1
+            if self.has_car[self.route_id[idx]][loc] == 1:
                 self.car_last_act[idx] = 1
                 return
 
@@ -535,7 +535,7 @@ class TrafficJunctionEnv(gym.Env):
                 self.has_failed = 1
 
         reward = self.alive_mask * reward
-        return reward
+        return np.sum(reward)
 
     def _onehot_initialization(self, a):
         if self.vocab_type == 'bool':

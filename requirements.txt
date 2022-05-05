@@ -1,5 +1,5 @@
 numpy
-visdom==0.1.4
+tensorboard
 torch
 Pillow
 gym==0.9.6
