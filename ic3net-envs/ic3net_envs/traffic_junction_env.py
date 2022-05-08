@@ -516,19 +516,12 @@ class TrafficJunctionEnv(gym.Env):
                 return False
         return True
 
-<<<<<<< HEAD
-    # if act is 0 , the vertical car is allow to get a pass
-    # if act is 1 , the horizontal car is allow to get a pass
-    # if act is 2 , all car is NOT allow to get a pass
-    def _take_action(self, idx, act: int):
-=======
 
 # if act is 0 , the vertical car is allow to get a pass
 # if act is 1 , the horizontal car is allow to get a pass
 # if act is 2 , all car is NOT allow to get a pass
 
     def _take_action(self, idx, lamp_action: int = 0, is_dqn=True, car_action: int = 0):
->>>>>>> 69fafa58fa6d1c2844c86d59ce3e959ee75cdde0
         # non-active car
         if self.alive_mask[idx] == 0:
             return
@@ -548,17 +541,10 @@ class TrafficJunctionEnv(gym.Env):
         # car see a red light or there is a car ahead
         # check has_car matrix
         loc = self.car_route_loc[idx]  # location of curr car
-<<<<<<< HEAD
-        if loc < len(self.chosen_path[idx]) - 1:  # should we check next car
-            # if self.has_car[self.route_id[idx]][loc + 1] == 1
-            # TODO 去掉了loc + 1
-            if self.has_car[self.route_id[idx]][loc] == 1:
-=======
         route_id = self.route_id[idx]
         # should we check next car
         if is_dqn is True and loc < len(self.chosen_path[idx]) - 1:
             if self.has_car[self.route_id[idx]][loc + 1] != 0:
->>>>>>> 69fafa58fa6d1c2844c86d59ce3e959ee75cdde0
                 self.car_last_act[idx] = 1
                 return
 
@@ -633,10 +619,6 @@ class TrafficJunctionEnv(gym.Env):
                 reward[i] += self.CRASH_PENALTY
                 self.has_failed = 1
 
-<<<<<<< HEAD
-        reward = self.alive_mask * reward
-        return np.sum(reward)
-=======
         # for i, o in enumerate(self.car_queue):
         #     car_queue_reward[i] = sum([o.timmer - x[1] for x in o.add_timmer])
 
@@ -646,7 +628,6 @@ class TrafficJunctionEnv(gym.Env):
             np.full(self.ncar, -1) * self.wait / self.max_steps / self.ncar)
 
         return output
->>>>>>> 69fafa58fa6d1c2844c86d59ce3e959ee75cdde0
 
     def _onehot_initialization(self, a):
         if self.vocab_type == 'bool':
