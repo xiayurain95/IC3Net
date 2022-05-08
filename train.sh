@@ -1,0 +1,17 @@
+python3 main.py --env_name traffic_junction \
+    --nagents 5 \
+    --nprocesses 1 \
+    --num_epochs 2000 \
+    --hid_size 128 \
+    --detach_gap 10 \
+    --lrate 0.001 \
+    --dim 6 \
+    --max_steps 40 \
+    --vision 0 \
+    --recurrent \
+    --add_rate_min 0.5 \
+    --add_rate_max 0.8 \
+    --curr_start 250 \
+    --curr_end 1250 \
+    --difficulty easy \
+    --is_dqn True

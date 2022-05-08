@@ -500,11 +500,10 @@ class TrafficJunctionEnv(gym.Env):
                 return False
         return True
 
-
-# if act is 0 , the vertical car is allow to get a pass
-# if act is 1 , the horizontal car is allow to get a pass
-# if act is 2 , all car is NOT allow to get a pass
-
+    # car_action: 0 gas, 1 break
+    # lamp_action: 0, the vertical car is allow to get a pass
+    # lamp_action: 1, the horizontal car is allow to get a pass
+    # lamp_action: 2, all car is NOT allow to get a pass
     def _take_action(self, idx, lamp_action: int = 0, is_dqn=True, car_action: int = 0):
         # non-active car
         if self.alive_mask[idx] == 0:
@@ -528,7 +527,8 @@ class TrafficJunctionEnv(gym.Env):
         route_id = self.route_id[idx]
         # should we check next car
         if is_dqn is True and loc < len(self.chosen_path[idx]) - 1:
-            if self.has_car[self.route_id[idx]][loc + 1] != 0:
+            # TODO same issue that the loc cannt be loc + 1
+            if self.has_car[self.route_id[idx]][loc] != 0:
                 self.car_last_act[idx] = 1
                 return
 

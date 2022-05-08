@@ -2,7 +2,7 @@ import sys
 import time
 import signal
 import argparse
-
+import os
 import numpy as np
 import torch
 # import visdom
@@ -248,7 +248,6 @@ def run(num_epochs):
     return_list = []
     for ep in range(num_epochs):
         epoch_begin_time = time.time()
-        stat = dict()
         episode_reward = []
         for episode in range(100):
             trainer.display = True
@@ -263,6 +262,10 @@ def run(num_epochs):
         ))
 
         writer.add_scalar('average_episode_reward', episode_reward, ep)
+        root_path = 'checkpoints'
+        if not os.path.exists(root_path):
+            os.mkdir(root_path)
+        save(os.path.join(root_path, '{}.pth'.format(ep)))
         # if 'enemy_reward' in stat.keys():
         #     print('Enemy-Reward: {}'.format(stat['enemy_reward']))
         # if 'add_rate' in stat.keys():
@@ -292,8 +295,8 @@ def run(num_epochs):
 
 def save(path):
     d = dict()
-    d['policy_net'] = policy_net.state_dict()
-    d['log'] = log
+    d['q_net'] = trainer.q_net.state_dict()
+    d['target_q_net'] = trainer.target_q_net.state_dict()
     d['trainer'] = trainer.state_dict()
     torch.save(d, path)
 

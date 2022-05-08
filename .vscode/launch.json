@@ -38,7 +38,8 @@
             "--add_rate_max=0.3",
             "--curr_start=250",
             "--curr_end=1250",
-            "--difficulty=easy"
+            "--difficulty=easy",
+            "--is_dqn=True"
         ]
     }]
 }

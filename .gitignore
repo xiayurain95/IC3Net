@@ -107,3 +107,5 @@ ENV/
 # customize
 .vscode
 runs
+checkpoints
+nohup.out

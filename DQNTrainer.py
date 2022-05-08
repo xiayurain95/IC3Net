@@ -12,7 +12,6 @@ class DQNTrainer(Trainer):
         super().__init__(args, policy_net, env)
         self.replay_buffer = ReplayBuffer()
         self.epsilon = 0.01
-        self.action_dim = args.action_dim  # Action number of the traffic light
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.gamma = 0.98
         self.target_update = 10
@@ -20,6 +19,9 @@ class DQNTrainer(Trainer):
         self.episode_num = 100
         self.minimal_size = 500
         self.batch_size = 64
+        
+        self.action_dim = args.action_dim  # Action number of the traffic light
+        self.car_num = args.nagents
         
         self.is_dqn = args.is_dqn
         self.q_net = Qnet(state_dim=args.state_dim,
@@ -43,12 +45,14 @@ class DQNTrainer(Trainer):
             self.env.display()
         # while done
         for t in range(self.args.max_steps):
-            action, actual = self.take_action(state)
+            action_vector, action_scalar = self.take_action(state)
             # lamp action, whether apply dqn, cars_action
-            next_state, reward, done, info = self.env.step(actual, self.is_dqn, action)
+            if self.is_dqn:
+                car_num = self.env.cars_in_sys
+                car_action = [1 for _ in range(self.car_num)]
+            next_state, reward, done, info = self.env.step(action_scalar, self.is_dqn, car_action)
             done = done or t == self.args.max_steps - 1
-            self.replay_buffer.add(state, action, reward, next_state, done)
-            state = next_state
+            self.replay_buffer.add(state, action_vector, reward, next_state, done)
             episode_return += reward
             
             # begin training when replay buffer is bigger enough
@@ -87,8 +91,8 @@ class DQNTrainer(Trainer):
             action = np.random.randint(self.action_dim)
         else:
             state = state.to(self.device)
-            action = self.q_net(state).argmax()
-        return action, action.item()
+            action = torch.softmax(self.q_net(state), dim=1).argmax()
+        return action, action
     
     def update(self, transition_dict):
         states = torch.tensor(

@@ -52,6 +52,10 @@ class GymWrapper(object):
     @property
     def action_space(self):
         return self.env.action_space
+    
+    @property
+    def cars_in_sys(self):
+        return self.env.cars_in_sys
 
     def reset(self, epoch):
         reset_args = getargspec(self.env.reset).args
@@ -73,8 +77,9 @@ class GymWrapper(object):
     def step(self,  lamp_action: int = 0, is_dqn=False, car_action_list=[]):
         # TODO: Modify all environments to take list of action
         # instead of doing this
-        if self.dim_actions == 1:
-            car_action_list = car_action_list[0]
+        # TODO dim_action
+        # if self.dim_actions == 1:
+        #     car_action_list = car_action_list[0]
         obs, r, done, info = self.env.step(
             lamp_action, is_dqn, car_action_list)
         obs = self._flatten_obs(obs)
