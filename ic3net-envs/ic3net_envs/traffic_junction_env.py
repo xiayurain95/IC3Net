@@ -97,22 +97,6 @@ class TrafficJunctionEnv(gym.Env):
 
     def init_args(self, parser):
         env = parser.add_argument_group('Traffic Junction task')
-        env.add_argument('--dim', type=int, default=5,
-                         help="Dimension of box (i.e length of road) ")
-        env.add_argument('--vision', type=int, default=1,
-                         help="Vision of car")
-        env.add_argument('--add_rate_min', type=float, default=0.05,
-                         help="rate at which to add car (till curr. start)")
-        env.add_argument('--add_rate_max', type=float, default=0.2,
-                         help=" max rate at which to add car")
-        env.add_argument('--curr_start', type=float, default=0,
-                         help="start making harder after this many epochs [0]")
-        env.add_argument('--curr_end', type=float, default=0,
-                         help="when to make the game hardest [0]")
-        env.add_argument('--difficulty', type=str, default='easy',
-                         help="Difficulty level, easy|medium|hard")
-        env.add_argument('--vocab_type', type=str, default='bool',
-                         help="Type of location vector to use, bool|scalar")
 
     def multi_agent_init(self, args):
         # General variables defining the environment : CONFIG

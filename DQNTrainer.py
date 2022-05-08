@@ -12,7 +12,7 @@ class DQNTrainer(Trainer):
         super().__init__(args, policy_net, env)
         self.replay_buffer = ReplayBuffer()
         self.epsilon = 0.01
-        self.action_dim = 3  # Action number of the traffic light
+        self.action_dim = args.action_dim  # Action number of the traffic light
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.gamma = 0.98
         self.target_update = 10
@@ -21,8 +21,11 @@ class DQNTrainer(Trainer):
         self.minimal_size = 500
         self.batch_size = 64
         
-        self.q_net = Qnet().to(self.device)
-        self.target_q_net  = Qnet().to(self.device)
+        self.is_dqn = args.is_dqn
+        self.q_net = Qnet(state_dim=args.state_dim,
+                          action_dim=self.action_dim).to(self.device)
+        self.target_q_net  = Qnet(state_dim=args.state_dim,
+                          action_dim=self.action_dim).to(self.device)
         self.optimizer = optim.Adam(self.q_net.parameters(),
             lr = 0.0001, betas=(0.5, 0.999))
 
@@ -40,9 +43,9 @@ class DQNTrainer(Trainer):
             self.env.display()
         # while done
         for t in range(self.args.max_steps):
-            action = self.take_action(state)
-            # TODO make sure the output of env.step
-            next_state, reward, done, _ = self.env.step(action)
+            action, actual = self.take_action(state)
+            # lamp action, whether apply dqn, cars_action
+            next_state, reward, done, info = self.env.step(actual, self.is_dqn, action)
             done = done or t == self.args.max_steps - 1
             self.replay_buffer.add(state, action, reward, next_state, done)
             state = next_state
@@ -84,20 +87,24 @@ class DQNTrainer(Trainer):
             action = np.random.randint(self.action_dim)
         else:
             state = state.to(self.device)
-            action = self.q_net(state).argmax().item()
-        return action
+            action = self.q_net(state).argmax()
+        return action, action.item()
     
     def update(self, transition_dict):
-        states = torch.tensor(transition_dict['states'],
-                              dtype=torch.double).to(self.device)
-        actions = torch.tensor(transition_dict['actions']).view(-1, 1).to(
-            self.device)
-        rewards = torch.tensor(transition_dict['rewards'],
-                               dtype=torch.double).view(-1, 1).to(self.device)
-        next_states = torch.tensor(transition_dict['next_states'],
-                                   dtype=torch.double).to(self.device)
-        dones = torch.tensor(transition_dict['dones'],
-                             dtype=torch.double).view(-1, 1).to(self.device)
+        states = torch.tensor(
+            transition_dict['states'],
+            dtype=torch.double).to(self.device)
+        actions = torch.tensor(
+            transition_dict['actions']).view(-1, 1).to(self.device)
+        rewards = torch.tensor(
+            transition_dict['rewards'],
+            dtype=torch.double).view(-1, 1).to(self.device)
+        next_states = torch.tensor(
+            transition_dict['next_states'],
+            dtype=torch.double).to(self.device)
+        dones = torch.tensor(
+            transition_dict['dones'],
+            dtype=torch.double).view(-1, 1).to(self.device)
 
         # Q value
         q_values = self.q_net(states).gather(1, actions)

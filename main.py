@@ -11,8 +11,6 @@ from models import *
 from comm import CommNetMLP
 from utils import *
 from action_utils import parse_action_args
-# from trainer import Trainer
-from DQNTrainer import DQNTrainer as Trainer
 from multi_processing import MultiProcessTrainer
 from torch.utils.tensorboard import SummaryWriter
 
@@ -63,15 +61,23 @@ parser.add_argument('--nactions', default='1', type=str,
                     help='the number of agent actions (0 for continuous). Use N:M:K for multiple actions')
 parser.add_argument('--action_scale', default=1.0, type=float,
                     help='scale action output from model')
-parser.add_argument('--dim', default=14, type=int, help='length of road')
-parser.add_argument('--vision', default=0, type=int,
-                    help='vision')
-parser.add_argument('--add_rate_min', default=0.1, type=float)
-parser.add_argument('--add_rate_max', default=0.3, type=float)
-parser.add_argument('--curr_start', default=250, type=int)
-parser.add_argument('--curr_end', default=1250, type=int)
-parser.add_argument('--difficulty', default='easy', type=str)
-parser.add_argument('--vocab_type', default='bool', type=str, help="Not sure what is it")
+parser.add_argument('--dim', type=int, default=5,
+                    help="Dimension of box (i.e length of road) ")
+parser.add_argument('--vision', type=int, default=1,
+                    help="Vision of car")
+parser.add_argument('--add_rate_min', type=float, default=0.05,
+                    help="rate at which to add car (till curr. start)")
+parser.add_argument('--add_rate_max', type=float, default=0.2,
+                    help=" max rate at which to add car")
+parser.add_argument('--curr_start', type=float, default=0,
+                    help="start making harder after this many epochs [0]")
+parser.add_argument('--curr_end', type=float, default=0,
+                    help="when to make the game hardest [0]")
+parser.add_argument('--difficulty', type=str, default='easy',
+                    help="Difficulty level, easy|medium|hard")
+parser.add_argument('--vocab_type', type=str, default='bool',
+                    help="Type of location vector to use, bool|scalar")
+
 
 # other
 parser.add_argument('--plot', action='store_true', default=False,
@@ -94,7 +100,7 @@ parser.add_argument('--random', action='store_true', default=False,
 # CommNet specific args
 parser.add_argument('--commnet', action='store_true', default=False,
                     help="enable commnet model")
-parser.add_argument('--ic3net', action='store_true', default=False,
+parser.add_argument('--ic3net', default=False, type=bool,
                     help="enable commnet model")
 parser.add_argument('--nagents', type=int, default=1,
                     help="Number of agents (used in multiagent)")
@@ -122,9 +128,27 @@ parser.add_argument('--advantages_per_action', default=False, action='store_true
 parser.add_argument('--share_weights', default=False, action='store_true',
                     help='Share weights for hops')
 
+# DQN args
+parser.add_argument('--state_dim', default=85, type=int,
+                    help='state dimmension of DQN net')
+parser.add_argument('--action_dim', default=3, type=int,
+                    help='output dimmension of the policy net')
+parser.add_argument('--is_dqn', default=True, type=bool,
+                    help="Whether training on DQN")
+
 
 init_args_for_env(parser)
 args = parser.parse_args()
+
+if not (args.is_dqn ^ args.ic3net):
+    raise ValueError("You have to specify whether DQN or IC3Net \
+        but got DQN: {}, IC3Net: {}".format(args.is_dqn, args.ic3net))
+
+if args.is_dqn:
+    from DQNTrainer import DQNTrainer as Trainer
+elif args.ic3net:
+    from trainer import Trainer
+
 
 if args.ic3net:
     args.commnet = 1
