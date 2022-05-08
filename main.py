@@ -214,8 +214,8 @@ log['entropy'] = LogField(list(), True, 'epoch', 'num_steps')
 #     vis = visdom.Visdom(env=args.plot_env)
 
 def run(num_epochs):
-    # import debugpy
-    # # 5678 is the default attach port in the VS Code debug configurations. Unless a host and port are specified, host defaults to 127.0.0.1
+    import debugpy
+    # 5678 is the default attach port in the VS Code debug configurations. Unless a host and port are specified, host defaults to 127.0.0.1
     # debugpy.listen(5678)
     # print("Waiting for debugger attach")
     # debugpy.wait_for_client()
