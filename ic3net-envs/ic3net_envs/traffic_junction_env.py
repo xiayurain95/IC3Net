@@ -29,6 +29,7 @@ import gym
 import numpy as np
 from gym import spaces
 from ic3net_envs.traffic_helper import *
+import torch
 
 
 # FIXME
@@ -84,6 +85,7 @@ class TrafficJunctionEnv(gym.Env):
 
         self.episode_over = False
         self.has_failed = 0
+        self.init_curses()
 
     def init_curses(self):
         self.stdscr = curses.initscr()
@@ -206,7 +208,7 @@ class TrafficJunctionEnv(gym.Env):
         self.cars_in_sys = 0
 
         # Chosen path for each car:
-        self.chosen_path = [0] * self.ncar
+        self.chosen_path = [[(0, 0) for _ in range(self.dims[0])] for _ in range(self.ncar)]
         # when dead => no route, must be masked by trainer.
         self.route_id = [-1] * self.ncar
 
@@ -390,6 +392,8 @@ class TrafficJunctionEnv(gym.Env):
             self.bool_base_grid = self.bool_base_grid[:, :, 1:]
 
         obs = []
+        vertical_nums = 0
+        horizontal_nums = 0
         for i, p in enumerate(self.car_loc):
             # most recent action
             act = self.car_last_act[i] / (self.naction - 1)
@@ -404,7 +408,15 @@ class TrafficJunctionEnv(gym.Env):
             slice_y = slice(p[0], p[0] + (2 * self.vision) + 1)
             slice_x = slice(p[1], p[1] + (2 * self.vision) + 1)
             v_sq = self.bool_base_grid[slice_y, slice_x]
-
+            
+            # whether car is alive
+            if self.car_route_loc[i] != -1:
+                # is_vertical
+                if self._is_vertical(i):
+                    vertical_nums += 1
+                else:
+                    horizontal_nums += 1
+                    
             # when dead, all obs are 0. But should be masked by trainer.
             if self.alive_mask[i] == 0:
                 act = np.zeros_like(act)
@@ -417,9 +429,12 @@ class TrafficJunctionEnv(gym.Env):
             else:
                 o = tuple((act, r_i, p_norm, v_sq))
             obs.append(o)
-
-        obs = tuple(obs)
-
+            
+        # obs = tuple(obs)
+        obs = torch.tensor([vertical_nums/self.ncar,
+                            horizontal_nums/self.ncar],
+                           dtype=torch.double)
+        obs = obs.unsqueeze(0)
         return obs
 
     def _add_cars(self):
@@ -587,6 +602,12 @@ class TrafficJunctionEnv(gym.Env):
         for o in self.car_queue:
             o.add_timmer()
 
+
+    def _is_vertical(self, idx):
+        # minus grid position to test if this car runs vertical
+        vertical = False if np.subtract(
+            self.chosen_path[idx][1], self.chosen_path[idx][0])[0] != 0 else True
+        return vertical
     # @return:
     # @return.1 penalty of this episode
     # @return.2 traffic junction sum of this episode
@@ -608,6 +629,10 @@ class TrafficJunctionEnv(gym.Env):
 
         output["ic3net_reward"] = self.alive_mask * \
             (reward + self.car_disobey_signal * self.CRASH_PENALTY)
+        
+        # wait: t; max_step: t; ncar: n
+        # max reward: 0
+        # min reward: -1
         output["dqn_reward"] = np.sum(
             np.full(self.ncar, -1) * self.wait / self.max_steps / self.ncar)
 

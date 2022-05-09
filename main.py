@@ -208,13 +208,10 @@ elif args.recurrent:
 else:
     policy_net = MLP(args, num_inputs)
 
-if not args.display:
-    display_models([policy_net])
+# if not args.display:
+#     display_models([policy_net])
 
-if args.nprocesses > 1:
-    trainer = MultiProcessTrainer(args, lambda: Trainer(args, policy_net, data.init(args.env_name, args)))
-else:
-    trainer = Trainer(args, policy_net, data.init(args.env_name, args))
+trainer = Trainer(args, policy_net, data.init(args.env_name, args))
 
 disp_trainer = Trainer(args, policy_net, data.init(args.env_name, args, False))
 disp_trainer.display = True

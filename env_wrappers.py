@@ -64,7 +64,7 @@ class GymWrapper(object):
         else:
             obs = self.env.reset()
 
-        obs = self._flatten_obs(obs)
+        # obs = self._flatten_obs(obs)
         return obs
 
     def display(self):
@@ -82,7 +82,7 @@ class GymWrapper(object):
         #     car_action_list = car_action_list[0]
         obs, r, done, info = self.env.step(
             lamp_action, is_dqn, car_action_list)
-        obs = self._flatten_obs(obs)
+        # obs = self._flatten_obs(obs)
         return (obs, r['dqn_reward'] if is_dqn is True else r["ic3net_reward"], done, info)
 
     def reward_terminal(self, is_dqn=False):

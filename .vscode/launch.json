@@ -22,11 +22,12 @@
         "request": "launch",
         "program": "main.py",
         "console": "integratedTerminal",
+        "cwd": "${workspaceFolder}",
         "args": [
             "--env_name=traffic_junction",
-            "--nagents=5",
+            "--nagents=7",
             "--nprocesses=1",
-            "--num_epochs=2000",
+            "--num_epochs=500",
             "--hid_size=128",
             "--detach_gap=10",
             "--lrate=0.001",
@@ -38,8 +39,9 @@
             "--add_rate_max=0.3",
             "--curr_start=250",
             "--curr_end=1250",
-            "--difficulty=easy",
-            "--is_dqn=True"
+            "--difficulty=medium",
+            "--is_dqn=True",
+            "--state_dim=2"
         ]
     }]
 }

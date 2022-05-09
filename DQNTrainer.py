@@ -70,7 +70,7 @@ class DQNTrainer(Trainer):
             if should_display:
                 self.env.display()
         
-        return episode_return
+        return episode_return / self.args.max_steps
     
     # only used when nprocesses=1
     def train_batch(self, epoch):
