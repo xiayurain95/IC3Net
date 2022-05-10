@@ -16,7 +16,6 @@ class DQNTrainer(Trainer):
         self.gamma = 0.98
         self.target_update = 10
         self.count = 0
-        self.episode_num = 100
         self.minimal_size = 500
         self.batch_size = 64
         

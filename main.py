@@ -242,27 +242,27 @@ def run(num_epochs):
     # debugpy.wait_for_client()
     # debugpy.breakpoint()
     # print('break on this line')
-    return_list = []
-    for ep in range(num_epochs):
+    # return_list = []
+    # for ep in range(num_epochs):
+    #     epoch_begin_time = time.time()
+    #     episode_reward = []
+    for episode in range(300):
         epoch_begin_time = time.time()
-        episode_reward = []
-        for episode in range(100):
-            trainer.display = True
-            reward = trainer.get_episode(episode)
-            episode_reward.append(reward)
+        reward = trainer.get_episode(episode)
+        # episode_reward.append(reward)
         epoch_time = time.time() - epoch_begin_time
-        episode_reward = np.mean(np.array(episode_reward))
-        return_list.append(episode_reward)
-        
+        # episode_reward = np.mean(np.array(episode_reward))
+        # return_list.append(episode_reward)
+    
         print('Epoch {}\tReward {:.5f}\tTime {:.2f}s'.format(
-                ep, episode_reward, epoch_time
+                episode, reward, epoch_time
         ))
 
-        writer.add_scalar('average_episode_reward', episode_reward, ep)
-        root_path = 'checkpoints'
-        if not os.path.exists(root_path):
-            os.mkdir(root_path)
-        save(os.path.join(root_path, '{}.pth'.format(ep)))
+        writer.add_scalar('average_episode_reward', reward, episode)
+    root_path = 'checkpoints'
+    if not os.path.exists(root_path):
+        os.mkdir(root_path)
+    save(os.path.join(root_path, '{}.pth'.format(ep)))
         # if 'enemy_reward' in stat.keys():
         #     print('Enemy-Reward: {}'.format(stat['enemy_reward']))
         # if 'add_rate' in stat.keys():
