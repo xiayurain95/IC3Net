@@ -5,36 +5,21 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: 远程连接",
-            "type": "python",
-            "request": "attach",
-            "connect": {
-                "host": "localhost",
-                "port": 5678
-            },
-            "pathMappings": [
-                {
-                    "localRoot": "${workspaceFolder}",
-                    "remoteRoot": "."
-                }
-            ],
-            "justMyCode": true
-        },{          
-            "name": "Python: Current File",
+            "name": "Python: 当前文件",
             "type": "python",
             "request": "launch",
             "program": "main.py",
             "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}",
+            "justMyCode": true,
             "args": [
                 "--env_name=traffic_junction",
-                "--nagents=5",
+                "--nagents=10",
                 "--nprocesses=1",
                 "--num_epochs=500",
                 "--hid_size=128",
                 "--detach_gap=10",
                 "--lrate=0.001",
-                "--dim=6",
+                "--dim=14",
                 "--max_steps=40",
                 "--vision=0",
                 "--ic3net=True",
@@ -48,5 +33,6 @@
                 "--epoch_size=1",
                 "--display=True"
             ]
-        }]
+        }
+    ]
 }
