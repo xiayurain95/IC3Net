@@ -204,6 +204,22 @@ class TrafficJunctionEnv(gym.Env):
         self.cross_num = 1 if self.difficulty == "easy" else (
             2 if self.difficulty == "medium" else 3)
 
+        # FIXME
+        if difficulty != "medium":
+            raise Exception("difficulty should be medium")
+        else:
+            num1 = (self.dim-2)/2
+            num2 = (self.dim-2)/2 + 1
+            self.overlap_matrix = {(0, num1): (2, num1),
+                                   (0, num2): (3, num1),
+                                   (1, num1): (2, num2),
+                                   (1, num2): (3, num2),
+                                   (2, num1): (0, num1),
+                                   (2, num2): (1, num1),
+                                   (3, num1): (0, num2),
+                                   (3, num2): (1, num2),
+                                   }
+
         self.car_queue = [CarQueue()] * (self.cross_num*2)
 
         # 00 , the vertical car is allow to get a pass
@@ -717,6 +733,11 @@ class TrafficJunctionEnv(gym.Env):
             if self.has_car[self.route_id[idx]][loc + 1] != 0:
                 self.car_last_act[idx] = 1
                 return
+            if (self.route_id[idx], loc + 1) in self.overlap_matrix:
+                x, y = self.overlap_matrix[(self.route_id[idx], loc + 1)]
+                if self.has_car[x][y] != 0:
+                    self.car_last_act[idx] = 1
+                    return
 
         # car/agent has reached end of its path
         if loc + 1 == len(self.chosen_path[idx]):
@@ -754,6 +775,15 @@ class TrafficJunctionEnv(gym.Env):
         prev = self.car_route_loc[idx]
         self.car_route_loc[idx] += 1
         curr = self.car_route_loc[idx]
+
+        # FIXME
+        if (self.route_id[idx], prev) in self.overlap_matrix:
+            x, y = self.overlap_matrix[(self.route_id[idx], prev)]
+            self.has_car[x][y] -= 1
+        # FIXME
+        if (self.route_id[idx], curr) in self.overlap_matrix:
+            x, y = self.overlap_matrix[(self.route_id[idx], curr)]
+            self.has_car[x][y] += 1
 
         prev = self.chosen_path[idx][prev]
         curr = self.chosen_path[idx][curr]
