@@ -208,8 +208,8 @@ class TrafficJunctionEnv(gym.Env):
         if difficulty != "medium":
             raise Exception("difficulty should be medium")
         else:
-            num1 = (self.dim-2)/2
-            num2 = (self.dim-2)/2 + 1
+            num1 = (self.dim-2)//2
+            num2 = (self.dim-2)//2 + 1
             self.overlap_matrix = {(0, num1): (2, num1),
                                    (0, num2): (3, num1),
                                    (1, num1): (2, num2),
@@ -734,7 +734,7 @@ class TrafficJunctionEnv(gym.Env):
                 self.car_last_act[idx] = 1
                 return
             if (self.route_id[idx], loc + 1) in self.overlap_matrix:
-                x, y = self.overlap_matrix[(self.route_id[idx], loc + 1)]
+                (x, y) = self.overlap_matrix[(self.route_id[idx], loc + 1)]
                 if self.has_car[x][y] != 0:
                     self.car_last_act[idx] = 1
                     return
@@ -778,11 +778,11 @@ class TrafficJunctionEnv(gym.Env):
 
         # FIXME
         if (self.route_id[idx], prev) in self.overlap_matrix:
-            x, y = self.overlap_matrix[(self.route_id[idx], prev)]
+            (x, y) = self.overlap_matrix[(self.route_id[idx], prev)]
             self.has_car[x][y] -= 1
         # FIXME
         if (self.route_id[idx], curr) in self.overlap_matrix:
-            x, y = self.overlap_matrix[(self.route_id[idx], curr)]
+            (x, y) = self.overlap_matrix[(self.route_id[idx], curr)]
             self.has_car[x][y] += 1
 
         prev = self.chosen_path[idx][prev]
