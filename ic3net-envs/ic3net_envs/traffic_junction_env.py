@@ -210,14 +210,14 @@ class TrafficJunctionEnv(gym.Env):
         else:
             num1 = (self.dim-2)//2
             num2 = (self.dim-2)//2 + 1
-            self.overlap_matrix = {(0, num1): (2, num1),
-                                   (0, num2): (3, num1),
+            self.overlap_matrix = {(0, num1): (3, num2),
+                                   (0, num2): (2, num1),
                                    (1, num1): (2, num2),
-                                   (1, num2): (3, num2),
-                                   (2, num1): (0, num1),
+                                   (1, num2): (3, num1),
+                                   (2, num1): (0, num2),
                                    (2, num2): (1, num1),
-                                   (3, num1): (0, num2),
-                                   (3, num2): (1, num2),
+                                   (3, num1): (1, num2),
+                                   (3, num2): (0, num1),
                                    }
 
         self.car_queue = [CarQueue()] * (self.cross_num*2)
