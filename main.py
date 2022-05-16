@@ -90,7 +90,7 @@ parser.add_argument('--save_every', default=0, type=int,
                     help='save the model after every n_th epoch')
 parser.add_argument('--load', default='', type=str,
                     help='load the model')
-parser.add_argument('--display', action="store_true", default=False,
+parser.add_argument('--display', default=False, type=bool,
                     help='Display environment state')
 
 
@@ -98,9 +98,9 @@ parser.add_argument('--random', action='store_true', default=False,
                     help="enable random model")
 
 # CommNet specific args
-parser.add_argument('--commnet', action='store_true', default=False,
+parser.add_argument('--commnet', default=False, type=bool,
                     help="enable commnet model")
-parser.add_argument('--ic3net', default=False, type=bool,
+parser.add_argument('--ic3net', default=True, type=bool,
                     help="enable commnet model")
 parser.add_argument('--nagents', type=int, default=1,
                     help="Number of agents (used in multiagent)")
@@ -127,6 +127,8 @@ parser.add_argument('--advantages_per_action', default=False, action='store_true
                     help='Whether to multipy log porb for each chosen action with advantages')
 parser.add_argument('--share_weights', default=False, action='store_true',
                     help='Share weights for hops')
+parser.add_argument('--observation_dim', default=35, type=int,
+                    help='dimmension of input state')
 
 # DQN args
 parser.add_argument('--state_dim', default=85, type=int,
@@ -169,7 +171,7 @@ if hasattr(args, 'enemy_comm') and args.enemy_comm:
 
 env = data.init(args.env_name, args, False)
 
-num_inputs = env.observation_dim
+num_inputs = args.observation_dim
 args.num_actions = env.num_actions
 
 # Multi-action
@@ -235,7 +237,7 @@ log['entropy'] = LogField(list(), True, 'epoch', 'num_steps')
 #     vis = visdom.Visdom(env=args.plot_env)
 
 def run(num_epochs):
-    import debugpy
+    #import debugpy
     # 5678 is the default attach port in the VS Code debug configurations. Unless a host and port are specified, host defaults to 127.0.0.1
     # debugpy.listen(5678)
     # print("Waiting for debugger attach")
@@ -262,7 +264,7 @@ def run(num_epochs):
     root_path = 'checkpoints'
     if not os.path.exists(root_path):
         os.mkdir(root_path)
-    save(os.path.join(root_path, '{}.pth'.format(ep)))
+    # save(os.path.join(root_path, '{}.pth'.format(ep)))
         # if 'enemy_reward' in stat.keys():
         #     print('Enemy-Reward: {}'.format(stat['enemy_reward']))
         # if 'add_rate' in stat.keys():

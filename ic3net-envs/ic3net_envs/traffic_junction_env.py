@@ -91,14 +91,34 @@ class TrafficJunctionEnv(gym.Env):
         self.stdscr = curses.initscr()
         curses.start_color()
         curses.use_default_colors()
-        curses.init_pair(1, curses.COLOR_RED, -1)
-        curses.init_pair(2, curses.COLOR_YELLOW, -1)
-        curses.init_pair(3, curses.COLOR_CYAN, -1)
-        curses.init_pair(4, curses.COLOR_GREEN, -1)
-        curses.init_pair(5, curses.COLOR_BLUE, -1)
-
+        curses.init_pair(1, curses.COLOR_WHITE, -1)
+        curses.init_pair(2, curses.COLOR_WHITE, -1)
+        curses.init_pair(3, curses.COLOR_WHITE, -1)
+        curses.init_pair(4, curses.COLOR_WHITE, -1)
+        curses.init_pair(5, curses.COLOR_WHITE, -1)
+        # if curses.can_change_color( ) == False:
+        #     raise RuntimeError("cannot change color")
+        # elif curses.can_change_color( )==True:
+        #     raise RuntimeError("can change color")
+        # else: raise RuntimeError("fuck what is it?")
     def init_args(self, parser):
         env = parser.add_argument_group('Traffic Junction task')
+        # env.add_argument('--dim', type=int, default=5,
+        #                  help="Dimension of box (i.e length of road) ")
+        # env.add_argument('--vision', type=int, default=1,
+        #                  help="Vision of car")
+        # env.add_argument('--add_rate_min', type=float, default=0.05,
+        #                  help="rate at which to add car (till curr. start)")
+        # env.add_argument('--add_rate_max', type=float, default=0.2,
+        #                  help=" max rate at which to add car")
+        # env.add_argument('--curr_start', type=float, default=0,
+        #                  help="start making harder after this many epochs [0]")
+        # env.add_argument('--curr_end', type=float, default=0,
+        #                  help="when to make the game hardest [0]")
+        # env.add_argument('--difficulty', type=str, default='easy',
+        #                  help="Difficulty level, easy|medium|hard")
+        # env.add_argument('--vocab_type', type=str, default='bool',
+        #                  help="Type of location vector to use, bool|scalar")
 
     def multi_agent_init(self, args):
         # General variables defining the environment : CONFIG
@@ -109,7 +129,9 @@ class TrafficJunctionEnv(gym.Env):
             setattr(self, key, getattr(args, key))
 
         self.ncar = args.nagents
-        self.dims = dims = (self.dim, self.dim)
+        self.dims =  dims = (self.dim, self.dim)
+
+
         self.max_steps = args.max_steps
 
         difficulty = args.difficulty
@@ -184,9 +206,28 @@ class TrafficJunctionEnv(gym.Env):
         self.cross_num = 1 if self.difficulty == "easy" else (
             2 if self.difficulty == "medium" else 3)
 
+        # FIXME
+        if difficulty != "medium":
+            raise Exception("difficulty should be medium")
+        else:
+            num1 = (self.dim-2)//2
+            num2 = (self.dim-2)//2 + 1
+            self.overlap_matrix = {(0, num1): (3, num2),
+                                   (0, num2): (2, num1),
+                                   (1, num1): (2, num2),
+                                   (1, num2): (3, num1),
+                                   (2, num1): (0, num2),
+                                   (2, num2): (1, num1),
+                                   (3, num1): (1, num2),
+                                   (3, num2): (0, num1),
+                                   }
+
         self.car_queue = [CarQueue()] * (self.cross_num*2)
 
-        self.signal_lamp = 0
+        # 00 , the vertical car is allow to get a pass
+        # 01 , the horizontal car is allow to get a pass
+        # 10 , all car is NOT allow to get a pass
+        self.signal_lamp = np.zeros(2)
 
         self.car_disobey_signal = np.zeros(self.ncar)
 
@@ -202,6 +243,11 @@ class TrafficJunctionEnv(gym.Env):
         """
         self.episode_over = False
         self.has_failed = 0
+
+        # ! we encode this agent mask :
+        # ! 0: agent
+        # ! 1: human
+        self.agent_mask = np.zeros(self.ncar)
 
         self.alive_mask = np.zeros(self.ncar)
         self.wait = np.zeros(self.ncar)
@@ -233,7 +279,7 @@ class TrafficJunctionEnv(gym.Env):
         for o in self.car_queue:
             o.reset()
 
-        self.signal_lamp = 0
+        self.signal_lamp = np.zeros(2)
 
         self.car_disobey_signal = np.zeros(self.ncar)
 
@@ -266,8 +312,12 @@ class TrafficJunctionEnv(gym.Env):
         """
         if self.episode_over:
             raise RuntimeError("Episode is done")
-
-        self.signal_lamp = lamp_action
+        self.signal_lamp = [0,0]
+        if lamp_action == 1:
+            self.signal_lamp[0] = 1
+        if lamp_action == 2:
+            self.signal_lamp[1] = 1
+        #ONE-HOT CODE FOR TRAFFIC LIGHTS
 
         # No one is completed before taking action
         self.is_completed = np.zeros(self.ncar)
@@ -287,6 +337,8 @@ class TrafficJunctionEnv(gym.Env):
 
         debug = {'car_loc': self.car_loc,
                  'alive_mask': np.copy(self.alive_mask),
+                 "agent_mask": np.copy(self.agent_mask),
+                 "signal_lamp": np.copy(self.signal_lamp),
                  'wait': self.wait,
                  'cars_in_sys': self.cars_in_sys,
                  'is_completed': np.copy(self.is_completed)}
@@ -304,18 +356,34 @@ class TrafficJunctionEnv(gym.Env):
         grid[grid == self.OUTSIDE_CLASS] = ''
         self.stdscr.clear()
         for i, p in enumerate(self.car_loc):
-            if self.car_last_act[i] == 0:  # GAS
+  #          if self.car_last_act[i] == 0: 
+
+            if self.agent_mask[i]==0: # GAS
                 if grid[p[0]][p[1]] != 0:
                     grid[p[0]][p[1]] = str(
-                        grid[p[0]][p[1]]).replace('_', '') + '<>'
+                        grid[p[0]][p[1]]).replace('_', '') + 'A'
                 else:
-                    grid[p[0]][p[1]] = '<>'
-            else:  # BRAKE
+                    grid[p[0]][p[1]] = 'A'#AS AUTONOMOUS DRIVING
+            else:
                 if grid[p[0]][p[1]] != 0:
                     grid[p[0]][p[1]] = str(
-                        grid[p[0]][p[1]]).replace('_', '') + '<b>'
+                        grid[p[0]][p[1]]).replace('_', '') + 'H'
                 else:
-                    grid[p[0]][p[1]] = '<b>'
+                    grid[p[0]][p[1]] = 'H'#AS HUMAN
+
+            # else:  # BRAKE
+            #     if self.agent_mask[i]==0:
+            #         if grid[p[0]][p[1]] != 0:
+            #             grid[p[0]][p[1]] = str(
+            #                 grid[p[0]][p[1]]).replace('_', '') + 'A'
+            #         else:
+            #             grid[p[0]][p[1]] = 'A'
+            #     else:
+            #         if grid[p[0]][p[1]] != 0:
+            #             grid[p[0]][p[1]] = str(
+            #                 grid[p[0]][p[1]]).replace('_', '') + 'H'
+            #         else:
+            #             grid[p[0]][p[1]] = 'H'
 
         for row_num, row in enumerate(grid):
             for idx, item in enumerate(row):
@@ -323,24 +391,138 @@ class TrafficJunctionEnv(gym.Env):
                     continue
                 if item != '_':
                     # CRASH, one car accelerates
-                    if '<>' in item and len(item) > 3:
+                    if 'A' or 'H' in item and len(item) > 3:
+
                         self.stdscr.addstr(
                             row_num, idx * 4, item.replace('b', '').center(3), curses.color_pair(2))
-                    elif '<>' in item:  # GAS
+
+                    elif 'A' or 'H' in item:  # GAS
                         self.stdscr.addstr(
                             row_num, idx * 4, item.center(3), curses.color_pair(1))
-                    elif 'b' in item and len(item) > 3:  # CRASH
+                    # elif 'b' in item and len(item) > 3:  # CRASH
+                    #     self.stdscr.addstr(
+                    #         row_num, idx * 4, item.replace('b', '').center(3), curses.color_pair(2))
+                    # elif 'b' in item:
+                    #     self.stdscr.addstr(
+                    #         row_num, idx * 4, item.replace('b', '').center(3), curses.color_pair(5))
+                    else:
+                        if self.signal_lamp[0]==0:
+                    #    self.stdscr.clear()
+                            self.stdscr.refresh()
+                            self.stdscr.addstr(
+                                row_num, idx * 4, '_'.center(3), curses.A_BLINK)
+                            self.stdscr.refresh()
+                        else:
+                            self.stdscr.refresh()
+                            self.stdscr.addstr(
+                            row_num, idx * 4, '_'.center(3), curses.A_STANDOUT)
+                            self.stdscr.refresh()
+                else:
+                        # self.stdscr.addstr(
+                        #     row_num, idx * 4, '_'.center(3), curses.A_BOLD)
+                    if self.signal_lamp[0]==0:
+                    #    self.stdscr.clear()
+                        self.stdscr.refresh()
+                        self.stdscr.addstr(
+                            row_num, idx * 4, '_'.center(3), curses.A_BLINK)
+                        self.stdscr.refresh()
+                    #    self.stdscr.clear()
+                    else:
+                    #    self.stdscr.clear()
+                        self.stdscr.refresh()
+                        self.stdscr.addstr(
+                            row_num, idx * 4, '_'.center(3), curses.A_STANDOUT)
+                        self.stdscr.refresh()
+                    #    self.stdscr.clear()
+        #signal_lamp
+        # 00 , the vertical car is allow to get a pass
+        # 01 , the horizontal car is allow to get a pass
+        # 10 , all car is NOT allow to get a pass
+        try:
+            self.stdscr.addstr(len(grid), 0, '\n')
+            self.stdscr.refresh()
+        except:
+            pass
+
+        grid = self.grid.copy().astype(object)
+
+        # grid = np.zeros(self.dims[0]*self.dims[1], dtypeobject).reshape(self.dims)
+        grid[grid != self.OUTSIDE_CLASS] = '_'
+        grid[grid == self.OUTSIDE_CLASS] = ''
+
+        self.stdscr.clear()
+        for i, p in enumerate(self.car_loc):
+
+            # if self.car_last_act[i]  == 0:  # GAS and (self.car_loc[i].all() != 0)
+            if self.agent_mask[i]==0:
+                if grid[p[0]][p[1]] != 0:
+                    grid[p[0]][p[1]] = str(
+                        grid[p[0]][p[1]]).replace('_', '') + 'A'
+                else:
+                    grid[p[0]][p[1]] = 'A'
+            else:
+                if grid[p[0]][p[1]] != 0:
+                    grid[p[0]][p[1]] = str(
+                        grid[p[0]][p[1]]).replace('_', '') + 'H'
+                else:
+                    grid[p[0]][p[1]] = 'H'
+            # else:  # BRAKE
+            #     if self.agent_mask[i]==0:
+            #         if grid[p[0]][p[1]] != '':
+            #             grid[p[0]][p[1]] = str(
+            #                 grid[p[0]][p[1]]).replace('A', '') + 'A'
+            #         else:
+            #             grid[p[0]][p[1]] = 'A'
+            #     else:
+            #         if grid[p[0]][p[1]] != '':
+            #             grid[p[0]][p[1]] = str(
+            #                 grid[p[0]][p[1]]).replace('H', '') + 'H'
+            #         else:
+            #             grid[p[0]][p[1]] = 'A'
+           # row
+        for row_num, row in enumerate(grid):
+
+            for idx, item in enumerate(row):
+
+                if row_num == idx == 0:
+                    continue
+
+                if item != '_':
+
+                    # CRASH, one car accelerates
+                    if 'A' or 'H' in item and len(item) > 3:
+
                         self.stdscr.addstr(
                             row_num, idx * 4, item.replace('b', '').center(3), curses.color_pair(2))
-                    elif 'b' in item:
+                    elif 'A' or 'H' in item:  # GAS
+
                         self.stdscr.addstr(
-                            row_num, idx * 4, item.replace('b', '').center(3), curses.color_pair(5))
+                            row_num, idx * 4, item.center(3), curses.color_pair(1))
+                    # elif 'b' in item and len(item) > 3:  # CRASH
+
+                    #     self.stdscr.addstr(
+                    #         row_num, idx * 4, item.replace('b', '').center(3), curses.color_pair(2))
+                    # elif 'b' in item:
+                    #     self.stdscr.addstr(
+                    #         row_num, idx * 4, item.replace('b', '').center(3), curses.color_pair(5))
                     else:
+                        pass
                         self.stdscr.addstr(
                             row_num, idx * 4, item.center(3),  curses.color_pair(2))
                 else:
-                    self.stdscr.addstr(
-                        row_num, idx * 4, '_'.center(3), curses.color_pair(4))
+                    if self.signal_lamp[0]==0:
+                    #    self.stdscr.clear()
+                        self.stdscr.refresh()
+                        self.stdscr.addstr(
+                            row_num, idx * 4, '_'.center(3), curses.A_BLINK)
+                        self.stdscr.refresh()
+                    else:
+                    #    self.stdscr.clear()
+                        self.stdscr.refresh()
+                        self.stdscr.addstr(
+                            row_num, idx * 4, '_'.center(3), curses.A_STANDOUT)
+                        self.stdscr.refresh()
+                     #   self.stdscr.clear()
 
         try:
             self.stdscr.addstr(len(grid), 0, '\n')
@@ -357,17 +539,23 @@ class TrafficJunctionEnv(gym.Env):
     def _set_grid(self):
         self.grid = np.full(
             self.dims[0] * self.dims[1], self.OUTSIDE_CLASS, dtype=int).reshape(self.dims)
-        w, h = self.dims
+        #set a matrix with dimension of dim*dim,full with OUTSIDE_CLASS，literally 0(by chenhaopeng)
+        w, h = self.dims#I guess this refers to width and height(by chenhaopeng)
 
         # Mark the roads
         roads = get_road_blocks(w, h, self.difficulty)
+        #roads里面是索引，有两个元素,都是slice，6~8列，6~8行，[(slice(6, 8, None), slice(None, None, None)), (slice(None, None, None), slice(6, 8, None))]
+
         for road in roads:
-            self.grid[road] = self.ROAD_CLASS
+
+            self.grid[road] = self.ROAD_CLASS#ROAD_CLASS=1
+            #把这个14*14矩阵（while dim=14）里6~8行，6~8列的地方都换成1（ROAD_CLASS的值）
         if self.vocab_type == 'bool':
-            self.route_grid = self.grid.copy()
+            self.route_grid = self.grid.copy()#初始化地图，route_grid就是之前有道路的地方是1的路网
             start = 0
             for road in roads:
                 sz = int(np.prod(self.grid[road].shape))
+
                 self.grid[road] = np.arange(
                     start, start + sz).reshape(self.grid[road].shape)
                 start += sz
@@ -458,6 +646,12 @@ class TrafficJunctionEnv(gym.Env):
                     self.alive_mask[idx] = 0
                     return
                 else:
+                    # make it as human
+                    # if np.random.uniform() <= self.add_rate:
+                    #     self.agent_mask[idx] = 1
+                    if np.random.uniform() <= 0.5:#there's a possibility of 0.5 that a car is initialized as human
+                        self.agent_mask[idx] = 1
+
                     self.route_id[idx] = r_i
                     self.chosen_path[idx] = routes[p_i]
 
@@ -515,18 +709,26 @@ class TrafficJunctionEnv(gym.Env):
                 return False
         return True
 
-    # car_action: 0 gas, 1 break
-    # lamp_action: 0, the vertical car is allow to get a pass
-    # lamp_action: 1, the horizontal car is allow to get a pass
-    # lamp_action: 2, all car is NOT allow to get a pass
-    def _take_action(self, idx, lamp_action: int = 0, is_dqn=True, car_action: int = 0):
+
+    # if act is 0 , the vertical car is allow to get a pass
+    # if act is 1 , the horizontal car is allow to get a pass
+    # if act is 2 , all car is NOT allow to get a pass
+
+    def _take_action(self, idx, lamp_action: int = 0, dqn_mask=True, car_action: int = 0):
         # non-active car
         if self.alive_mask[idx] == 0:
             return
+        #I guess this determines whether traffic light will be taken into consideration(from chp)
+        is_dqn = True if (
+            dqn_mask is True or self.agent_mask[idx] == 1) else False
 
         # add wait time for active cars
+        #I guess “wait” refers to the time that a car already existed,rather than waiting for a traffic light (from chp)
         self.wait[idx] += 1
 
+        #A bit of confusing,because the car_action was initialized as 0(from chp)
+        # There was a variable called naction,which refers to(0: GAS, 1: BRAKE),may be related.(from chp)
+        # car_last_act means last act GAS when awake(from chp)
         if is_dqn is False and car_action == 1:
             self.car_last_act[idx] = 1
             return
@@ -540,17 +742,24 @@ class TrafficJunctionEnv(gym.Env):
         # check has_car matrix
         loc = self.car_route_loc[idx]  # location of curr car
         route_id = self.route_id[idx]
+
         # should we check next car
         if is_dqn is True and loc < len(self.chosen_path[idx]) - 1:
             # TODO same issue that the loc cannt be loc + 1
             if self.has_car[self.route_id[idx]][loc] != 0:
                 self.car_last_act[idx] = 1
                 return
+            if (self.route_id[idx], loc + 1) in self.overlap_matrix:
+                (x, y) = self.overlap_matrix[(self.route_id[idx], loc + 1)]
+                if self.has_car[x][y] != 0:
+                    self.car_last_act[idx] = 1
+                    return
 
         # car/agent has reached end of its path
         if loc + 1 == len(self.chosen_path[idx]):
             self.cars_in_sys -= 1
             self.alive_mask[idx] = 0
+            self.agent_mask[idx] = 0
             self.wait[idx] = 0
 
             # put it at dead loc
@@ -582,6 +791,15 @@ class TrafficJunctionEnv(gym.Env):
         prev = self.car_route_loc[idx]
         self.car_route_loc[idx] += 1
         curr = self.car_route_loc[idx]
+
+        # FIXME
+        if (self.route_id[idx], prev) in self.overlap_matrix:
+            (x, y) = self.overlap_matrix[(self.route_id[idx], prev)]
+            self.has_car[x][y] -= 1
+        # FIXME
+        if (self.route_id[idx], curr) in self.overlap_matrix:
+            (x, y) = self.overlap_matrix[(self.route_id[idx], curr)]
+            self.has_car[x][y] += 1
 
         prev = self.chosen_path[idx][prev]
         curr = self.chosen_path[idx][curr]

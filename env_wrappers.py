@@ -101,8 +101,7 @@ class GymWrapper(object):
                 _obs.append(np.concatenate(ag_obs))
             obs = np.stack(_obs)
 
-        # obs = obs.reshape(1, -1, self.observation_dim)
-        obs = obs.flatten()
+        obs = obs.reshape(1, -1, 35)
         obs = torch.from_numpy(obs).double()
         return obs.unsqueeze(0)
 

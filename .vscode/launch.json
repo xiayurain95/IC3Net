@@ -4,44 +4,33 @@
     // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [{
-        "name": "Python: 远程连接",
-        "type": "python",
-        "request": "attach",
-        "connect": {
-            "host": "localhost",
-            "port": 5678
-        },
-        "pathMappings": [{
-            "localRoot": "${workspaceFolder}",
-            "remoteRoot": "."
-        }],
-        "justMyCode": true
-    },{
-        "name": "Python: Current File",
+        "name": "Python: 当前文件",
         "type": "python",
         "request": "launch",
         "program": "main.py",
         "console": "integratedTerminal",
-        "cwd": "${workspaceFolder}",
+        "justMyCode": true,
         "args": [
             "--env_name=traffic_junction",
-            "--nagents=6",
+            "--nagents=10",
             "--nprocesses=1",
             "--num_epochs=500",
             "--hid_size=128",
             "--detach_gap=10",
             "--lrate=0.001",
-            "--dim=6",
-            "--max_steps=200",
+            "--dim=14",
+            "--max_steps=40",
             "--vision=0",
+            "--ic3net=True",
             "--recurrent",
             "--add_rate_min=0.1",
             "--add_rate_max=0.3",
             "--curr_start=250",
             "--curr_end=1250",
             "--difficulty=medium",
-            "--is_dqn=True",
-            "--state_dim=2"
-        ]
-    }]
+            "--observation_dim=35",
+            "--epoch_size=1",
+            "--display=True"
+        ]}
+    ]
 }
