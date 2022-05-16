@@ -141,7 +141,7 @@ parser.add_argument('--is_dqn', default=True, type=bool,
 
 init_args_for_env(parser)
 args = parser.parse_args()
-
+args.ic3net = False
 if not (args.is_dqn ^ args.ic3net):
     raise ValueError("You have to specify whether DQN or IC3Net \
         but got DQN: {}, IC3Net: {}".format(args.is_dqn, args.ic3net))
@@ -255,7 +255,6 @@ def run(num_epochs):
         epoch_time = time.time() - epoch_begin_time
         # episode_reward = np.mean(np.array(episode_reward))
         # return_list.append(episode_reward)
-    
         print('Epoch {}\tReward {:.5f}\tTime {:.2f}s'.format(
                 episode, reward, epoch_time
         ))
@@ -265,19 +264,6 @@ def run(num_epochs):
     if not os.path.exists(root_path):
         os.mkdir(root_path)
     # save(os.path.join(root_path, '{}.pth'.format(ep)))
-        # if 'enemy_reward' in stat.keys():
-        #     print('Enemy-Reward: {}'.format(stat['enemy_reward']))
-        # if 'add_rate' in stat.keys():
-        #     print('Add-Rate: {:.2f}'.format(stat['add_rate']))
-        # if 'success' in stat.keys():
-        #     print('Success: {:.2f}'.format(stat['success']))
-        # if 'steps_taken' in stat.keys():
-        #     print('Steps-taken: {:.2f}'.format(stat['steps_taken']))
-        # if 'comm_action' in stat.keys():
-        #     print('Comm-Action: {}'.format(stat['comm_action']))
-        # if 'enemy_comm' in stat.keys():
-        #     print('Enemy-Comm: {}'.format(stat['enemy_comm']))
-
         # if args.plot:
         #     for k, v in log.items():
         #         if v.plot and len(v.data) > 0:

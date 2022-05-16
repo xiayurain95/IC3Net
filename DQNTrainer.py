@@ -40,8 +40,8 @@ class DQNTrainer(Trainer):
             state = self.env.reset()
         should_display = self.display and self.last_step
 
-        if should_display:
-            self.env.display()
+        # if should_display:
+        self.env.display()
         # while done
         for t in range(self.args.max_steps):
             action_vector, action_scalar = self.take_action(state)
@@ -153,7 +153,7 @@ class ReplayBuffer:
 
 class Qnet(torch.nn.Module):
     ''' 只有一层隐藏层的Q网络 '''
-    def __init__(self, state_dim=5*17, action_dim=3, hidden_dim=128):
+    def __init__(self, state_dim=2, action_dim=3, hidden_dim=128):
         super(Qnet, self).__init__()
         self.fc1 = torch.nn.Linear(state_dim, hidden_dim)
         self.fc2 = torch.nn.Linear(hidden_dim, action_dim)
